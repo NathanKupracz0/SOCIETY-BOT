@@ -21,17 +21,26 @@ async def on_ready():
     print(f'Logged in as {bot.user.name} - {bot.user.id}')
     print('------')
 
-bot.run(token,  log_handler=handler, log_level=logging.DEBUG)
-
 @bot.event
 async def on_member_join(member):
-    channel = discord.utils.get(member.guild.text_channels, name='general')
-    if channel:
-        await channel.send(f'Welcome to the server, {member.mention}!')
+    await member.send(f'Welcome to the server, {member.name}!')
 
-@bot.command(name='ping')
-async def ping(ctx):
-    await ctx.send('Pong!')
+@bot.command
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    
+    if "ping" in message.content.lower():
+        await message.channel.send(f"{message.author.mention} Pong!")
+    await bot.process_commands(message)
+    
+
+
+
+bot.run(token,  log_handler=handler, log_level=logging.DEBUG)
+
+
+
 
 
 
