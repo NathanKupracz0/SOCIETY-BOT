@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 import logging
 import json
+import datetime
+from datetime import datetime, timezone
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,24 +25,20 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # --- DATA STORAGE ---
 todo_lists = {}
-TODO_DATA_FILE = "todo_data.json"
 
-def save_todo_data():
-    """Save todo_lists to JSON file."""
-    with open(TODO_DATA_FILE, "w") as f:
-        json.dump(todo_lists, f, indent=4)
+TODO_FILE = "todo_data.json"
+def load_todos():
+    if not os.path.exists(TODO_FILE):
+        return {}
+    with open(TODO_FILE, "r") as f:
+        return json.load(f)
 
-def load_todo_data():
-    """Load todo_lists from JSON file."""
-    global todo_lists
-    try:
-        with open(TODO_DATA_FILE, "r") as f:
-            todo_lists = json.load(f)
-    except FileNotFoundError:
-        todo_lists = {}
+def save_todos(data):
+    with open(TODO_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 # Load data on startup
-load_todo_data()
+
 
 # ---Committee Checker---
 
@@ -72,80 +70,89 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
 # --- COMMANDS ---
-
-@bot.command(name="todoview")
-async def tdview(ctx):
-    """View the current to-do list."""
-    guild_id = str(ctx.guild.id)
-    todo = todo_lists.get(guild_id, {"tasks": [], "assigned_user": None})
-    tasks = todo["tasks"]
-    assigned_user = todo["assigned_user"]
-
-    if not tasks:
-        await ctx.send("📝 The to-do list is currently empty!")
-        return
-
-    formatted_tasks = "\n".join([f"{i+1}. {task}" for i, task in enumerate(tasks)])
-
-    if assigned_user:
-        user = await bot.fetch_user(assigned_user)
-        assigned_str = f"👤 Assigned to: {user.mention}"
-    else:
-        assigned_str = "👤 No one is assigned yet."
-
-    await ctx.send(f"**📋 To-Do List:**\n{formatted_tasks}\n\n{assigned_str}")
-
-
 @bot.command(name="todo+")
-async def td_add(ctx, *, task: str = None):
-    """Add a task to the to-do list."""
-    if not task:
-        await ctx.send("⚠️ Please include a task to add. Example: `!todo+ finish report`")
-        return
+async def todo_add(ctx, *, task):
+    cid = str(ctx.channel.id)
 
-    guild_id = str(ctx.guild.id)
-    if guild_id not in todo_lists:
-        todo_lists[guild_id] = {"tasks": [], "assigned_user": None}
+    if cid not in todo_lists:
+        todo_lists[cid] = {"tasks": []}
 
-    todo_lists[guild_id]["tasks"].append(task)
-    save_todo_data()
-    await ctx.send(f"✅ Added task: **{task}**")
-
+    todo_lists[cid]["tasks"].append({"task": task, "assigned_to": None})
+    save_todos(todo_lists)
+    
+    await ctx.send(f"➕ Added task: **{task}**")
 
 @bot.command(name="todo-")
-async def td_remove(ctx, index: int = None):
-    """Remove a task from the to-do list by its number."""
-    guild_id = str(ctx.guild.id)
-    todo = todo_lists.get(guild_id)
+async def todo_remove(ctx, index: int):
+    data = load_todos()
+    cid = str(ctx.channel.id)
 
-    if not todo or not todo["tasks"]:
-        await ctx.send("⚠️ The to-do list is empty!")
-        return
+    if cid not in data or index < 1 or index > len(data[cid]["tasks"]):
+        return await ctx.send("❌ Invalid task number.")
 
-    if index is None or index < 1 or index > len(todo["tasks"]):
-        await ctx.send("⚠️ Please provide a valid task number. Example: `!todo- 2`")
-        return
+    removed = data[cid]["tasks"].pop(index - 1)
+    save_todos(data)
 
-    removed_task = todo["tasks"].pop(index - 1)
-    save_todo_data()
-    await ctx.send(f"🗑️ Removed task: **{removed_task}**")
+    await ctx.send(f"🗑 Removed task: **{removed['task']}**")
 
+@bot.command()
+async def todoview(ctx):
+    data = load_todos()
+    cid = str(ctx.channel.id)
 
-@bot.command(name="todoassign")
-async def td_assign(ctx, user: discord.Member = None):
-    """Assign the to-do list to a user."""
-    guild_id = str(ctx.guild.id)
-    if guild_id not in todo_lists:
-        todo_lists[guild_id] = {"tasks": [], "assigned_user": None}
+    if cid not in data or not data[cid]["tasks"]:
+        return await ctx.send("📭 No tasks in this channel/thread.")
 
-    if not user:
-        await ctx.send("⚠️ Please mention a user to assign. Example: `!todoassign @username`")
-        return
+    msg = "**📋 To-do list for this channel/thread:**\n\n"
+    for i, t in enumerate(data[cid]["tasks"], start=1):
+        assigned = f"<@{t['assigned_to']}>" if t["assigned_to"] else "None"
+        msg += f"{i}. **{t['task']}** — Assigned: {assigned}\n"
 
-    todo_lists[guild_id]["assigned_user"] = user.id
-    save_todo_data()
-    await ctx.send(f"✅ To-do list assigned to {user.mention}")
+    await ctx.send(msg)
 
+@bot.command()
+async def todoassign(ctx, index: int, user: discord.Member):
+    data = load_todos()
+    cid = str(ctx.channel.id)
+
+    if cid not in data or index < 1 or index > len(data[cid]["tasks"]):
+        return await ctx.send("❌ Invalid task number.")
+
+    data[cid]["tasks"][index - 1]["assigned_to"] = user.id
+    save_todos(data)
+
+    await ctx.send(f"👤 Assigned **{user.mention}** to task #{index}.")
+
+@bot.command()
+async def todoviewall(ctx):
+    data = load_todos()
+
+    if not data:
+        return await ctx.send("📭 No to-do lists exist yet.")
+
+    msg = "**📂 All channels/threads with to-do lists:**\n\n"
+
+    for cid, content in data.items():
+        channel = bot.get_channel(int(cid))
+        if channel:
+            msg += f"• {channel.mention} — {len(content['tasks'])} tasks\n"
+        else:
+            msg += f"• Unknown channel ({cid}) — {len(content['tasks'])} tasks\n"
+
+    await ctx.send(msg)
+
+@bot.command()
+async def todofinish(ctx):
+    data = load_todos()
+    cid = str(ctx.channel.id)
+
+    if cid not in data:
+        return await ctx.send("❌ This channel/thread has no to-do list.")
+
+    del data[cid]
+    save_todos(data)
+
+    await ctx.send("✅ This channel/thread's to-do list has been cleared.")
 
 bot.run(token)
 

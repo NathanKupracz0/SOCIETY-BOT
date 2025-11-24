@@ -1,8 +1,38 @@
 {
-    "1396588907600023694": {
+    "1396588909126881383": {
         "tasks": [
-            "make a design"
-        ],
-        "assigned_user": 647783236562583552
+            {
+                "task": "find a unicorn",
+                "assigned_to": null
+            }
+        ]
+    },
+    "1396588908682281130": {
+        "tasks": [
+            {
+                "task": "create a json file for remind feature",
+                "assigned_to": null
+            },
+            {
+                "task": "create a command that will view all reminders currently active (!remindview)",
+                "assigned_to": null
+            },
+            {
+                "task": "add a !remind that will:\ncheck first for a list of users or roles \ncheck the date and time to remind everyone\ncheck the the channel to post it in\ncheck for the message itself \nso the command would look like\n\n!remind <@&1396588908170444923>  30/12/25 12:30  <#1396588909126881382>  meeting in 10 minutes!",
+                "assigned_to": null
+            },
+            {
+                "task": "!remind feature",
+                "assigned_to": null
+            },
+            {
+                "task": "forget feautre",
+                "assigned_to": null
+            },
+            {
+                "task": "forget feature",
+                "assigned_to": null
+            }
+        ]
     }
 }
