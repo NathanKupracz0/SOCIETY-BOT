@@ -124,6 +124,21 @@ async def todoassign(ctx, index: int, user: discord.Member):
     await ctx.send(f"👤 Assigned **{user.mention}** to task #{index}.")
 
 @bot.command()
+async def todounassign(ctx, index: int):
+    data = load_todos()
+    cid = str(ctx.channel.id)
+
+    if cid not in data or index < 1 or index > len(data[cid]["tasks"]):
+        return await ctx.send("❌ Invalid task number.")
+
+    # Unassign the task
+    data[cid]["tasks"][index - 1]["assigned_to"] = None
+
+    save_todos(data)
+    await ctx.send("Task unassigned successfully.")
+
+    
+@bot.command()
 async def todoviewall(ctx):
     data = load_todos()
 
@@ -155,6 +170,12 @@ async def todofinish(ctx):
     await ctx.send("✅ This channel/thread's to-do list has been cleared.")
 
 bot.run(token)
+
+
+
+
+    
+
 
 
 
