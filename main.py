@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 import logging
 import json
 import datetime
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
+import time
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,6 +27,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 # --- DATA STORAGE ---
 todo_lists = {}
 
+
 TODO_FILE = "todo_data.json"
 def load_todos():
     if not os.path.exists(TODO_FILE):
@@ -36,6 +38,21 @@ def load_todos():
 def save_todos(data):
     with open(TODO_FILE, "w") as f:
         json.dump(data, f, indent=4)
+        
+        todo_lists = {}
+
+REMINDER_FILE = "reminders_data.json"
+def load_reminders():
+    if not os.path.exists(REMINDER_FILE):
+        return {}
+    with open(REMINDER_FILE, "r") as f:
+        return json.load(f)
+
+def save_reminders(data):
+    with open(REMINDER_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+        
+        
 
 # Load data on startup
 
@@ -171,6 +188,20 @@ async def todofinish(ctx):
 
 bot.run(token)
 
+#reminders!!!! yay
+
+@bot.command()
+async def remind(ctx, role: discord.Role, date: str, time: str, channel: discord.TextChannel, *, message: str):
+    
+    await ctx.send(f"""
+Role: {role.mention}
+Date: {date}
+Time: {time}
+Channel: {channel.mention}
+Message: {message}
+""")
+    
+    
 
 
 

@@ -29,3 +29,304 @@ Traceback (most recent call last):
   File "/opt/miniconda3/lib/python3.13/site-packages/discord/ext/commands/converter.py", line 1344, in _actual_conversion
     raise BadArgument(f'Converting to "{name}" failed for parameter "{param.name}".') from exc
 discord.ext.commands.errors.BadArgument: Converting to "int" failed for parameter "index".
+Shard ID None has successfully RESUMED session 160a69a4dc28c32d770182f50e208b17.
+Shard ID None has successfully RESUMED session 160a69a4dc28c32d770182f50e208b17.
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d2bb5c4432ed3dda0e823999b0660f07).
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 6224fa8f19c3fcc8977873b1f33872a6).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 46eeb511218dde87c69763040d72fe19).
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 982895b005c1d9f94edb947fe73678f9).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 18c78095f5ea697b3158ba76fc02130a).
+Shard ID 0 timed out waiting for chunks for guild_id 709707367645708308.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 245d7216366c6933de2faea29e667809).
+Attempting a reconnect in 0.02s
+Traceback (most recent call last):
+  File "/opt/miniconda3/lib/python3.13/asyncio/tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/site-packages/discord/gateway.py", line 383, in from_client
+    socket = await client.http.ws_connect(str(url))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/site-packages/discord/http.py", line 566, in ws_connect
+    return await self.__session.ws_connect(url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/site-packages/aiohttp/client.py", line 1076, in _ws_connect
+    resp = await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+    )
+    ^
+  File "/opt/miniconda3/lib/python3.13/site-packages/aiohttp/client.py", line 779, in _request
+    resp = await handler(req)
+           ^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/site-packages/aiohttp/client.py", line 757, in _connect_and_send_request
+    await resp.start(conn)
+  File "/opt/miniconda3/lib/python3.13/site-packages/aiohttp/client_reqrep.py", line 539, in start
+    message, payload = await protocol.read()  # type: ignore[union-attr]
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/site-packages/aiohttp/streams.py", line 680, in read
+    await self._waiter
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/miniconda3/lib/python3.13/site-packages/discord/client.py", line 724, in connect
+    self.ws = await asyncio.wait_for(coro, timeout=60.0)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/asyncio/tasks.py", line 506, in wait_for
+    async with timeouts.timeout(timeout):
+               ~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/opt/miniconda3/lib/python3.13/asyncio/timeouts.py", line 116, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d261b155ba0c04cffffec4adc4cf1cd4).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 1d80543104ca6b22347668838d8cdc3a).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 975fc527aa74ce2f2a7908ee46c5b8c4).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 86689433b732b948ed5239e91aee4273).
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 20e069fec264fa7d7bb3fafbf4270096).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 264af7e8e5667d1eddf5f8566e555fdd).
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 98f9f9eb85c1eb7af5fd0915ea8d6213).
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b6de908f686fe6b70ff7289ef5b54af6).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 3dda484ade615ad67cfc2b4712c60569).
+Shard ID None has successfully RESUMED session 3dda484ade615ad67cfc2b4712c60569.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: eb45056468311f8c1bdf40f7ec1e966a).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 297f865da17e71ed438da1d7f105e557).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 08a8005f65ee55d778bc103b3b60e918).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 246411de77d6548f97b580e8e49b2e15).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 36a12b076f00c639e4854de43bfa09b6).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 4f15a41fbfd15dc38689876a50841fc9).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: f39046288d59824668dbb17db0eab5c8).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: ee07390ac8826ce2c58eeaf6d0a36429).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 81564d9a7277fcaacd2fdc1ca36fa593).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 9d04325e7fb373357a4bfff8d90a6a82).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b974dc508eb1171e9e3d71dd735d5053).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 5d7706bfbb485bc2d3cac962fbbd4428).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: db0d7acb063fdaafbe6f720524d62dc2).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 8998cada04207573a0dda5c74a6027aa).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 334ae70d5f1826aad42c9568fe578156).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 9658b1519155b1d349606af97103354a).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 96b5617e1a33af44e331b53203c2a282).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 1f125d21a48669f5d384f6baf6b20a02).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b0f50bb889260b8462bc488fcacf764d).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 71e3313aa69183da61ee3371c893244f).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: c637df9a2693c61c2eb91d5298c5e920).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 55ed7aebd13e24a8f93d0865d8b594f3).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 2a169320d2df87fdbfc6510a24206a78).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b6bd26ef81da880fd12ace119b4c8ed2).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: e42781dda60accb88b31b7e0316635c9).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 4bb391a96bb40ee9655cba7919b4ab7e).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d1cc2b73c5352d045c19a4abd5123df0).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 3ccb3ad4a665cba88b047360ff03f99c).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: dbfbfb04e8638b13b6be9cfd03d8a0cb).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 9ebc17984a5b2918cf24ca7de16d8fcc).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: dfb8b0863724ed950240c0d4ecdc5764).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 1e48501d9cc8667e46b8d6a39136a288).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 2b96c7ff74b36c93afdb3bbdcfa6d238).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d930c5d3bd5a9082476f2a9dd20d2ecb).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 0f8d355acd1259a449348e213cb6c033).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: ff40ca78e0f41eeeb156d350c694ad5d).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 8a32a545a597adedebdaf4741e9e4d69).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 81ed818b467ff2bf862d13788972e596).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 929da40319ad77f9f7220e95de859afb).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b3b67ab7f8c0267974e526290b82ac6f).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: e01deb6dd05b35bec21c36707b55923d).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 658fbf5f03496d7d79c090e010f09217).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 51382739fdc7d965d4a809bbcbd9047c).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 58fd6dc1f3880ffabc6954fea7582910).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 9662c73da380f772b8271f4f67cceb31).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b8c80e10e8bab0716559af32d4e34a4d).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: ee6133d57d9586b41b22707ce4b4c267).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 27623848bd452a7c54359b7f068c8044).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 3a6ce5c1764a64cf324bebbdc580ae6f).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: b6215a1aaa5d1cb484ebedadef3e42ae).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 82d61ce41a9b7c63055d7e838794a74c).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 6490569ea9c640bb58bc0bb005d2c4db).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 0ae0556de83c495ea2da38ea7f1f6a68).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: e30b34a2b99b55018925e11860ce44c7).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: c2f71e2e2527bd68fbaa9076d8cf7d9b).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 197397eed95bbd6634cf837a9250a21a).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 6ed5279ae55e890209750d89311130b1).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 7cbc19db3e0d55ea9cd8050b85e4f71e).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: a8ffe7ad546f60e4ca853aac9d91cade).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: f37c2b4b78e0d8357ca2bd8d56afbbf3).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 8c3a2acdfcfb8d6066183704d7cfc266).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 1b03ba74f0b895d4dda60020eb5d93c1).
+Can't keep up, shard ID None websocket is 39.5s behind.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 1822049f14ff72fb098a62044b0b41ae).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 7de97b0430fde682360038461a8a3aa3).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 5d00930510b19c8955db60d32a0d0122).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 754031d65d8e1213e2e5c72b801af1b3).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 3428f2c1d1593376c50a7e22b94c7277).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: caa7ec22bbdcb5d79a5b2c7cecb24c6f).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 7a447e5d879f2b2db53247e34673c11a).
+Shard ID None has successfully RESUMED session 7a447e5d879f2b2db53247e34673c11a.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 3547dcdc752b11224271c88c6503d923).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: c71f6aa2143b57036d59ea1ac7d24edd).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 19f27aabce829093358f04b58fb0c8f8).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d08229953ab4179546c02a4e8603156c).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: da6e7a4a0d82d14ea8bd254ff1c555ca).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 60761773e99c1cc94a03bf60689ad73a).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 4c7959eca2bf72290febd93219b169df).
+Shard ID None has successfully RESUMED session 4c7959eca2bf72290febd93219b169df.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: c12a7949a5bd02618cf994487066f5db).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 67794b723507752b9c733169f466898e).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 6f981d424bb8ede56c29fd8dce009748).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 9f28e4fc06922e386b4b53dad653320a).
+Can't keep up, shard ID None websocket is 35.6s behind.
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 2c4ea0008de64bc871e0b7fe19d1f408).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 96ffeedf40a3b2af0eb748bce3670342).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 71663d09fd6b4d919fe514829191cf3a).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: f44ae23eb08127d7b5c24933bc40b45c).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 77705fe799f34cbc513e1579a37949ef).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 9a4620727798e655048f1dcbdfca46cd).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: fbce9530ebe0e9a90481241def694dc9).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 98e8cf604cb69dca0528d13ad649afe6).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d2de6b5ac5767b158f36e321c0bfe9c1).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: aa418fc3d5b78fcb5d5aa1cd108f74b7).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 90fe91bcdd8f8f03784720d089c59c87).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: ab8d3d66ea6cf8db400cc5c5ae78b67f).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 53b6d8b2333d9762f048fc06c63d0a32).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: ef5ad8673a9f6928d21f232bdfbab93c).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 4272f24f6c198ebc2c3fb9cdc30cdf74).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 2e0293b1e1301d6fd12acaae1e54e3d0).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 88d2e172163ae4396051fc777c6d5fbb).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: ac64514f94e583908898cc5344103308).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 445f75e3fbf35ba3456d70fd42828ea9).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: d936030726a0e85ad831fe217a0efbe3).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: f52786beb17d3f97b9d08bd0552206a4).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: 200435435e709705516a9a74296d58e5).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: c445e7401817c9b10a0776d324dfca3f).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: f82913849a98013390d6cb77a74c0ee2).
+Shard ID None session has been invalidated.
+Shard ID None has connected to Gateway (Session ID: cba8c720ae9210467968b52bbb87d3e4).
+Shard ID None has successfully RESUMED session cba8c720ae9210467968b52bbb87d3e4.
