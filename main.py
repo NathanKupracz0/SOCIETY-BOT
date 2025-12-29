@@ -7,6 +7,7 @@ import json
 import datetime
 from datetime import datetime, timedelta
 import time
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,6 +52,25 @@ def load_reminders():
 def save_reminders(data):
     with open(REMINDER_FILE, "w") as f:
         json.dump(data, f, indent=4)
+        
+LOG_FILE = "chatdat.json"
+
+def load_logs():
+    if not os.path.exists(LOG_FILE):
+        return []
+    with open(LOG_FILE, "r") as f:
+        return json.load(f)
+
+def save_logs(data):
+    with open(LOG_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def add_log(entry):
+    logs = load_logs()
+    logs.append(entry)
+    save_logs(logs)
+        
+
         
         
 
@@ -202,8 +222,108 @@ Message: {message}
 """)
     
     
+#log
 
+async def get_log_channel(guild):
+    channel = discord.utils.get(guild.text_channels, name="soc-logs")
+    if channel:
+        return channel
 
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        guild.me: discord.PermissionOverwrite(read_messages=True)
+    }
+
+    for role in guild.roles:
+        if role.permissions.administrator or role.permissions.manage_guild:
+            overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+
+    channel = await guild.create_text_channel(
+        name="soc-logs",
+        overwrites=overwrites,
+        reason="Private server log channel"
+    )
+
+    return channel
+# Log helper (JSON + Discord)
+
+async def log_event(guild, entry, message_text):
+    add_log(entry)
+    log_channel = await get_log_channel(guild)
+    await log_channel.send(message_text)
+
+# Message logging
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    entry = {
+        "type": "message",
+        "author": str(message.author),
+        "author_id": message.author.id,
+        "content": message.content,
+        "channel": message.channel.name,
+        "channel_id": message.channel.id,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    log_text = (
+        f"📝 **Message Sent**\n"
+        f"User: {message.author}\n"
+        f"Channel: {message.channel.mention}\n"
+        f"Content: {message.content}"
+    )
+
+    await log_event(message.guild, entry, log_text)
+    await bot.process_commands(message)
+
+# Command Logging
+@bot.event
+async def on_command(ctx):
+    entry = {
+        "type": "command",
+        "author": str(ctx.author),
+        "author_id": ctx.author.id,
+        "command": ctx.command.qualified_name,
+        "message": ctx.message.content,
+        "channel": ctx.channel.name,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+    log_text = (
+        f"⚙️ **Command Used**\n"
+        f"User: {ctx.author}\n"
+        f"Channel: {ctx.channel.mention}\n"
+        f"Command: `{ctx.message.content}`"
+    )
+
+    await log_event(ctx.guild, entry, log_text)
+    
+    # Message Deletion
+    
+    @bot.event
+    async def on_message_delete(message):
+        if message.author.bot:
+            return
+
+        entry = {
+        "type": "message_delete",
+        "original_author": str(message.author),
+        "original_author_id": message.author.id,
+        "content": message.content,
+        "channel": message.channel.name,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+        log_text = (
+        f"🗑️ **Message Deleted**\n"
+        f"Author: {message.author}\n"
+        f"Channel: {message.channel.mention}\n"
+        f"Content: {message.content}"
+    )
+
+        await log_event(message.guild, entry, log_text)
 
     
 
