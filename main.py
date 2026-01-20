@@ -325,6 +325,7 @@ async def on_command(ctx):
 
         await log_event(message.guild, entry, log_text)
 
+
     
 
 
