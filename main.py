@@ -4,226 +4,74 @@ import os
 from dotenv import load_dotenv
 import logging
 import json
-import datetime
 from datetime import datetime, timedelta
-import time
 import asyncio
 
-# Load environment variables from .env file
+# ================== ENV ==================
 load_dotenv()
-token = os.getenv('DISCORD_TOKEN')
+TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Set up logging
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-logger = logging.getLogger('discord')
+# ================== LOGGING ==================
+handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+logger = logging.getLogger("discord")
 logger.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
+# ================== BOT ==================
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
+intents.reactions = True
+intents.messages = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None
+)
 
-# --- DATA STORAGE ---
-todo_lists = {}
-
-
+# ================== FILES ==================
 TODO_FILE = "todo_data.json"
-def load_todos():
-    if not os.path.exists(TODO_FILE):
-        return {}
-    with open(TODO_FILE, "r") as f:
-        return json.load(f)
-
-def save_todos(data):
-    with open(TODO_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-        
-        todo_lists = {}
-
 REMINDER_FILE = "reminders_data.json"
-def load_reminders():
-    if not os.path.exists(REMINDER_FILE):
-        return {}
-    with open(REMINDER_FILE, "r") as f:
-        return json.load(f)
 
-def save_reminders(data):
-    with open(REMINDER_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-        
-LOG_FILE = "chatdat.json"
+# ================== JSON HELPERS ==================
+def load_json(path, default):
+    if not os.path.exists(path):
+        return default
+    try:
+        with open(path, "r") as f:
+            text = f.read().strip()
+            if not text:
+                return default
+            return json.loads(text)
+    except json.JSONDecodeError:
+        return default
 
-def load_logs():
-    if not os.path.exists(LOG_FILE):
-        return []
-    with open(LOG_FILE, "r") as f:
-        return json.load(f)
-
-def save_logs(data):
-    with open(LOG_FILE, "w") as f:
+def save_json(path, data):
+    with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
-def add_log(entry):
-    logs = load_logs()
-    logs.append(entry)
-    save_logs(logs)
-        
-
-        
-        
-
-# Load data on startup
-
-
-# ---Committee Checker---
-
-def is_committee_member(member: discord.Member) -> bool:
-    """Return True if member has the committee role."""
-    committee_role_name = "systems administrator"
-    for role in member.roles:
-        if role.name.lower() == committee_role_name.lower():  # case-insensitive
-            return True
-    return False
+# ================== PERMISSIONS ==================
+def is_committee_member(member):
+    return any(role.name.lower() == "systems administrator" for role in member.roles)
 
 @bot.check
-async def global_committee_check(ctx):
-    # Allow these commands for everyone
-    allowed_for_all = ["ping", "help"]
-    if ctx.command.name in allowed_for_all:
+async def committee_check(ctx):
+    if ctx.command is None:
+        return False
+
+    root = ctx.command.root_parent.name if ctx.command.root_parent else ctx.command.name
+
+    if root in ["remind", "commands", "ping"]:
         return True
 
-    # Require committee role for all other commands
     if is_committee_member(ctx.author):
         return True
-    else:
-        await ctx.send("🚫 You do not have permission to use this command.")
-        return False
-   
-# --- EVENTS ---
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
 
-# --- COMMANDS ---
-@bot.command(name="todo+")
-async def todo_add(ctx, *, task):
-    cid = str(ctx.channel.id)
+    await ctx.send("You do not have permission.")
+    return False
 
-    if cid not in todo_lists:
-        todo_lists[cid] = {"tasks": []}
-
-    todo_lists[cid]["tasks"].append({"task": task, "assigned_to": None})
-    save_todos(todo_lists)
-    
-    await ctx.send(f"➕ Added task: **{task}**")
-
-@bot.command(name="todo-")
-async def todo_remove(ctx, index: int):
-    data = load_todos()
-    cid = str(ctx.channel.id)
-
-    if cid not in data or index < 1 or index > len(data[cid]["tasks"]):
-        return await ctx.send("❌ Invalid task number.")
-
-    removed = data[cid]["tasks"].pop(index - 1)
-    save_todos(data)
-
-    await ctx.send(f"🗑 Removed task: **{removed['task']}**")
-
-@bot.command()
-async def todoview(ctx):
-    data = load_todos()
-    cid = str(ctx.channel.id)
-
-    if cid not in data or not data[cid]["tasks"]:
-        return await ctx.send("📭 No tasks in this channel/thread.")
-
-    msg = "**📋 To-do list for this channel/thread:**\n\n"
-    for i, t in enumerate(data[cid]["tasks"], start=1):
-        assigned = f"<@{t['assigned_to']}>" if t["assigned_to"] else "None"
-        msg += f"{i}. **{t['task']}** — Assigned: {assigned}\n"
-
-    await ctx.send(msg)
-
-@bot.command()
-async def todoassign(ctx, index: int, user: discord.Member):
-    data = load_todos()
-    cid = str(ctx.channel.id)
-
-    if cid not in data or index < 1 or index > len(data[cid]["tasks"]):
-        return await ctx.send("❌ Invalid task number.")
-
-    data[cid]["tasks"][index - 1]["assigned_to"] = user.id
-    save_todos(data)
-
-    await ctx.send(f"👤 Assigned **{user.mention}** to task #{index}.")
-
-@bot.command()
-async def todounassign(ctx, index: int):
-    data = load_todos()
-    cid = str(ctx.channel.id)
-
-    if cid not in data or index < 1 or index > len(data[cid]["tasks"]):
-        return await ctx.send("❌ Invalid task number.")
-
-    # Unassign the task
-    data[cid]["tasks"][index - 1]["assigned_to"] = None
-
-    save_todos(data)
-    await ctx.send("Task unassigned successfully.")
-
-    
-@bot.command()
-async def todoviewall(ctx):
-    data = load_todos()
-
-    if not data:
-        return await ctx.send("📭 No to-do lists exist yet.")
-
-    msg = "**📂 All channels/threads with to-do lists:**\n\n"
-
-    for cid, content in data.items():
-        channel = bot.get_channel(int(cid))
-        if channel:
-            msg += f"• {channel.mention} — {len(content['tasks'])} tasks\n"
-        else:
-            msg += f"• Unknown channel ({cid}) — {len(content['tasks'])} tasks\n"
-
-    await ctx.send(msg)
-
-@bot.command()
-async def todofinish(ctx):
-    data = load_todos()
-    cid = str(ctx.channel.id)
-
-    if cid not in data:
-        return await ctx.send("❌ This channel/thread has no to-do list.")
-
-    del data[cid]
-    save_todos(data)
-
-    await ctx.send("✅ This channel/thread's to-do list has been cleared.")
-
-bot.run(token)
-
-#reminders!!!! yay
-
-@bot.command()
-async def remind(ctx, role: discord.Role, date: str, time: str, channel: discord.TextChannel, *, message: str):
-    
-    await ctx.send(f"""
-Role: {role.mention}
-Date: {date}
-Time: {time}
-Channel: {channel.mention}
-Message: {message}
-""")
-    
-    
-#log
-
+# ================== LOG CHANNEL ==================
 async def get_log_channel(guild):
     channel = discord.utils.get(guild.text_channels, name="soc-logs")
     if channel:
@@ -238,99 +86,248 @@ async def get_log_channel(guild):
         if role.permissions.administrator or role.permissions.manage_guild:
             overwrites[role] = discord.PermissionOverwrite(read_messages=True)
 
-    channel = await guild.create_text_channel(
-        name="soc-logs",
-        overwrites=overwrites,
-        reason="Private server log channel"
-    )
+    return await guild.create_text_channel("soc-logs", overwrites=overwrites)
 
-    return channel
-# Log helper (JSON + Discord)
+# ================== TODO COMMAND GROUP ==================
+@bot.group(name="todo", invoke_without_command=True)
+async def todo(ctx):
+    await ctx.send("Usage: !todo add | remove | view | clear | assign | unassign")
 
-async def log_event(guild, entry, message_text):
-    add_log(entry)
-    log_channel = await get_log_channel(guild)
-    await log_channel.send(message_text)
+@todo.command(name="add")
+async def todo_add(ctx, *, task):
+    data = load_json(TODO_FILE, {})
+    cid = str(ctx.channel.id)
+    data.setdefault(cid, {"tasks": []})
+    data[cid]["tasks"].append({"task": task, "assigned_to": None})
+    save_json(TODO_FILE, data)
+    await ctx.send("Task added.")
 
-# Message logging
+@todo.command(name="remove")
+async def todo_remove(ctx, number: int):
+    data = load_json(TODO_FILE, {})
+    cid = str(ctx.channel.id)
+
+    if cid not in data or number < 1 or number > len(data[cid]["tasks"]):
+        return await ctx.send("Invalid task number.")
+
+    removed = data[cid]["tasks"].pop(number - 1)
+    save_json(TODO_FILE, data)
+    await ctx.send("Task removed: " + removed["task"])
+
+@todo.command(name="view")
+async def todo_view(ctx):
+    data = load_json(TODO_FILE, {})
+    cid = str(ctx.channel.id)
+
+    if cid not in data or not data[cid]["tasks"]:
+        return await ctx.send("No tasks in this channel.")
+
+    lines = ["To-do list:"]
+    for i, t in enumerate(data[cid]["tasks"], 1):
+        assigned = f"<@{t['assigned_to']}>" if t["assigned_to"] else "None"
+        lines.append(f"{i}. {t['task']} — Assigned to: {assigned}")
+
+    await ctx.send("\n".join(lines))
+
+@todo.command(name="clear")
+async def todo_clear(ctx):
+    data = load_json(TODO_FILE, {})
+    cid = str(ctx.channel.id)
+    data.pop(cid, None)
+    save_json(TODO_FILE, data)
+    await ctx.send("All tasks cleared.")
+
+@todo.command(name="assign")
+async def todo_assign(ctx, member: discord.Member, number: int):
+    data = load_json(TODO_FILE, {})
+    cid = str(ctx.channel.id)
+
+    if cid not in data or number < 1 or number > len(data[cid]["tasks"]):
+        return await ctx.send("Invalid task number.")
+
+    data[cid]["tasks"][number - 1]["assigned_to"] = member.id
+    save_json(TODO_FILE, data)
+    await ctx.send("Task assigned.")
+
+@todo.command(name="unassign")
+async def todo_unassign(ctx, number: int):
+    data = load_json(TODO_FILE, {})
+    cid = str(ctx.channel.id)
+
+    if cid not in data or number < 1 or number > len(data[cid]["tasks"]):
+        return await ctx.send("Invalid task number.")
+
+    data[cid]["tasks"][number - 1]["assigned_to"] = None
+    save_json(TODO_FILE, data)
+    await ctx.send("Task unassigned.")
+
+# ================== REMIND COMMAND GROUP ==================
+@bot.group(name="remind", invoke_without_command=True)
+async def remind(ctx):
+    await ctx.send("Usage: !remind set | list | forget")
+
+@remind.command(name="set")
+async def remind_set(ctx, target: str, time: str = None, *, message=None):
+    is_admin = is_committee_member(ctx.author)
+
+    if not target.startswith("<@"):
+        users = [ctx.author]
+        time_str = target
+    else:
+        if not is_admin:
+            return await ctx.send("You can only remind yourself.")
+
+        if target.startswith("<@&"):
+            role_id = int(target[3:-1])
+            role = ctx.guild.get_role(role_id)
+            if not role:
+                return await ctx.send("Role not found.")
+            users = role.members
+        else:
+            user_id = int(target.strip("<@!>"))
+            member = ctx.guild.get_member(user_id)
+            if not member:
+                return await ctx.send("User not found.")
+            users = [member]
+
+        if not time or not message:
+            return await ctx.send("Time and message required.")
+        time_str = time
+
+    units = {"s": 1, "m": 60, "h": 3600}
+    try:
+        amount = int(time_str[:-1])
+        unit = time_str[-1]
+        seconds = amount * units[unit]
+    except:
+        return await ctx.send("Invalid time format.")
+
+    remind_time = datetime.utcnow() + timedelta(seconds=seconds)
+    reminders = load_json(REMINDER_FILE, [])
+
+    for user in users:
+        reminders.append({
+            "user_id": user.id,
+            "channel_id": ctx.channel.id,
+            "message": message,
+            "time": remind_time.isoformat()
+        })
+
+    save_json(REMINDER_FILE, reminders)
+    await ctx.send("Reminder set.")
+
+@remind.command(name="list")
+async def remind_list(ctx):
+    reminders = load_json(REMINDER_FILE, [])
+    user_reminders = [r for r in reminders if r["user_id"] == ctx.author.id]
+
+    if not user_reminders:
+        return await ctx.send("No pending reminders.")
+
+    lines = ["Your reminders:"]
+    now = datetime.utcnow()
+
+    for i, r in enumerate(user_reminders, 1):
+        delta = datetime.fromisoformat(r["time"]) - now
+        mins = int(delta.total_seconds() // 60)
+        secs = int(delta.total_seconds() % 60)
+        lines.append(f"{i}. {r['message']} — in {mins}m {secs}s")
+
+    await ctx.send("\n".join(lines))
+
+@remind.command(name="forget")
+async def remind_forget(ctx, number: int):
+    reminders = load_json(REMINDER_FILE, [])
+    mine = [r for r in reminders if r["user_id"] == ctx.author.id]
+
+    if number < 1 or number > len(mine):
+        return await ctx.send("Invalid reminder number.")
+
+    reminders.remove(mine[number - 1])
+    save_json(REMINDER_FILE, reminders)
+    await ctx.send("Reminder deleted.")
+
+# ================== COMMAND LIST ==================
+@bot.command(name="commands")
+async def commands_list(ctx):
+    lines = [
+        "Available commands:",
+        "",
+        "Reminders:",
+        "!remind set <time> <message>",
+        "!remind list",
+        "!remind forget <number>"
+    ]
+
+    if is_committee_member(ctx.author):
+        lines += [
+            "",
+            "Admin commands:",
+            "!todo add <task>",
+            "!todo remove <number>",
+            "!todo view",
+            "!todo clear",
+            "!todo assign @user <number>",
+            "!todo unassign <number>",
+            "!remind set @user <time> <message>",
+            "!remind set @role <time> <message>"
+        ]
+
+    await ctx.send("\n".join(lines))
+
+# ================== REMINDER LOOP ==================
+async def reminder_loop():
+    await bot.wait_until_ready()
+    while not bot.is_closed():
+        reminders = load_json(REMINDER_FILE, [])
+        now = datetime.utcnow()
+        remaining = []
+
+        for r in reminders:
+            if now >= datetime.fromisoformat(r["time"]):
+                channel = bot.get_channel(r["channel_id"])
+                user = bot.get_user(r["user_id"])
+                if channel and user:
+                    await channel.send(f"{user.mention} Reminder: {r['message']}")
+            else:
+                remaining.append(r)
+
+        if remaining != reminders:
+            save_json(REMINDER_FILE, remaining)
+
+        await asyncio.sleep(30)
+
+# ================== MESSAGE LOGGING ==================
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
 
-    entry = {
-        "type": "message",
-        "author": str(message.author),
-        "author_id": message.author.id,
-        "content": message.content,
-        "channel": message.channel.name,
-        "channel_id": message.channel.id,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    if message.attachments:
+        log_channel = await get_log_channel(message.guild)
+        links = "\n".join(a.url for a in message.attachments)
+        await log_channel.send(
+            f"Message from {message.author} in {message.channel.mention}:\n"
+            f"{message.content}\nAttachments:\n{links}"
+        )
 
-    log_text = (
-        f"📝 **Message Sent**\n"
-        f"User: {message.author}\n"
-        f"Channel: {message.channel.mention}\n"
-        f"Content: {message.content}"
-    )
-
-    await log_event(message.guild, entry, log_text)
     await bot.process_commands(message)
 
-# Command Logging
 @bot.event
-async def on_command(ctx):
-    entry = {
-        "type": "command",
-        "author": str(ctx.author),
-        "author_id": ctx.author.id,
-        "command": ctx.command.qualified_name,
-        "message": ctx.message.content,
-        "channel": ctx.channel.name,
-        "timestamp": datetime.utcnow().isoformat()
-    }
-
-    log_text = (
-        f"⚙️ **Command Used**\n"
-        f"User: {ctx.author}\n"
-        f"Channel: {ctx.channel.mention}\n"
-        f"Command: `{ctx.message.content}`"
+async def on_message_delete(message):
+    if message.author.bot:
+        return
+    log_channel = await get_log_channel(message.guild)
+    await log_channel.send(
+        f"Message deleted by {message.author} in {message.channel.mention}:\n"
+        f"{message.content}"
     )
 
-    await log_event(ctx.guild, entry, log_text)
-    
-    # Message Deletion
-    
-    @bot.event
-    async def on_message_delete(message):
-        if message.author.bot:
-            return
+# ================== READY ==================
+@bot.event
+async def on_ready():
+    print(f"Bot online as {bot.user}")
+    bot.loop.create_task(reminder_loop())
 
-        entry = {
-        "type": "message_delete",
-        "original_author": str(message.author),
-        "original_author_id": message.author.id,
-        "content": message.content,
-        "channel": message.channel.name,
-        "timestamp": datetime.utcnow().isoformat()
-    }
-
-        log_text = (
-        f"🗑️ **Message Deleted**\n"
-        f"Author: {message.author}\n"
-        f"Channel: {message.channel.mention}\n"
-        f"Content: {message.content}"
-    )
-
-        await log_event(message.guild, entry, log_text)
-
-
-    
-
-
-
-
-
-
+bot.run(TOKEN)
 
