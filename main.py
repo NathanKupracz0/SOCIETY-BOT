@@ -1,21 +1,35 @@
 import discord
 from discord.ext import commands
 import os
-from dotenv import load_dotenv
 import logging
 import json
 from datetime import datetime, timedelta, timezone
 import asyncio
+from pathlib import Path
 
 # ================== ENV ==================
-load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+if not TOKEN:
+    raise RuntimeError("DISCORD_TOKEN is not set")
+
+DATA_DIR = Path(os.getenv("DATA_DIR", "/app/data"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# ================== FILE PATHS ==================
+TODO_FILE = DATA_DIR / "todo_data.json"
+REMINDER_FILE = DATA_DIR / "reminders_data.json"
+COUNTDOWN_FILE = DATA_DIR / "countdowns.json"
+LOG_FILE = DATA_DIR / "discord.log"
 
 # ================== LOGGING ==================
-handler = logging.FileHandler(filename="discord.log", encoding="utf-8", mode="w")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+
+file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8", mode="a")
 logger = logging.getLogger("discord")
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+logger.addHandler(file_handler)
 
 # ================== BOT ==================
 intents = discord.Intents.default()
@@ -30,27 +44,23 @@ bot = commands.Bot(
     help_command=None
 )
 
-# ================== FILES ==================
-TODO_FILE = "todo_data.json"
-REMINDER_FILE = "reminders_data.json"
-COUNTDOWN_FILE = "countdowns.json"
-
 # ================== JSON HELPERS ==================
 def load_json(path, default):
-    if not os.path.exists(path):
+    if not path.exists():
         return default
     try:
-        with open(path, "r") as f:
-            text = f.read().strip()
-            if not text:
-                return default
-            return json.loads(text)
+        text = path.read_text().strip()
+        if not text:
+            return default
+        return json.loads(text)
     except json.JSONDecodeError:
         return default
 
 def save_json(path, data):
-    with open(path, "w") as f:
+    tmp = path.with_suffix(".tmp")
+    with open(tmp, "w") as f:
         json.dump(data, f, indent=4)
+    tmp.replace(path)
 
 # ================== PERMISSIONS ==================
 def is_committee_member(member):
@@ -81,8 +91,51 @@ async def get_log_channel(guild):
         if role.permissions.administrator or role.permissions.manage_guild:
             overwrites[role] = discord.PermissionOverwrite(read_messages=True)
     return await guild.create_text_channel("soc-logs", overwrites=overwrites)
+# ================== COMMAND LIST ==================
+# ================== COMMAND LIST ==================
+@bot.command(name="commands")
+async def commands_list(ctx):
+    lines = [
+        "Available commands:",
+        "",
+        "Reminders:",
+        "!remind set <HHMM> <message>",
+        "!remind set <HHMM> day|week|month <message>",
+        "!remind list",
+        "!remind forget <number>",
+        "",
+        "Countdowns:",
+        "!countdown set <YYYY-MM-DD> <HHMM> <label>",
+        "!countdown list",
+        "!countdown forget <number>",
+        "",
+        "Todo:",
+        "!todo view",
+        "!todo assigned @user"
+    ]
+    if is_committee_member(ctx.author):
+        lines += [
+            "",
+            "Admin commands:",
+            "",
+            "Todo management:",
+            "!todo add <task>",
+            "!todo remove <number>",
+            "!todo clear",
+            "!todo assign @user <number>",
+            "!todo unassign <number>",
+            "",
+            "Admin reminders:",
+            "!remind set @user <HHMM> #channel [day|week|month] <message>",
+            "!remind set @role <HHMM> #channel [day|week|month] <message>",
+            "",
+            "Admin countdowns:",
+            "!countdown set @user <YYYY-MM-DD> <HHMM> #channel <label>",
+            "!countdown set @role <YYYY-MM-DD> <HHMM> #channel <label>"
+        ]
+    await ctx.send("\n".join(lines))
 
-# ================== TODO COMMAND GROUP ==================
+# ================== TODO COMMANDS ==================
 @bot.group(name="todo", invoke_without_command=True)
 async def todo(ctx):
     await ctx.send("Usage: !todo add | remove | view | clear | assign | unassign")
@@ -117,6 +170,25 @@ async def todo_view(ctx):
         assigned = f"<@{t['assigned_to']}>" if t["assigned_to"] else "None"
         lines.append(f"{i}. {t['task']} — Assigned to: {assigned}")
     await ctx.send("\n".join(lines))
+    
+@todo.command(name="assigned")
+async def todo_assigned(ctx, member: discord.Member):
+    data = load_json(TODO_FILE, {})
+    results = []
+
+    for cid, payload in data.items():
+        for i, task in enumerate(payload.get("tasks", []), 1):
+            if task.get("assigned_to") == member.id:
+                channel = ctx.guild.get_channel(int(cid))
+                channel_name = channel.mention if channel else f"(Channel {cid})"
+                results.append(f"{channel_name}: {i}. {task['task']}")
+
+    if not results:
+        return await ctx.send(f"No tasks assigned to {member.mention}.")
+
+    await ctx.send(
+        f"Tasks assigned to {member.mention}:\n" + "\n".join(results)
+    )
 
 @todo.command(name="clear")
 async def todo_clear(ctx):
@@ -209,14 +281,10 @@ async def remind_set(ctx, target: str, time: str = None, channel_ref: str = None
             return await ctx.send("You can only remind yourself.")
         if target.startswith("<@&"):
             role = ctx.guild.get_role(int(target[3:-1]))
-            if not role:
-                return await ctx.send("Role not found.")
-            users = role.members
+            users = role.members if role else []
         else:
             member = ctx.guild.get_member(int(target.strip("<@!>")))
-            if not member:
-                return await ctx.send("User not found.")
-            users = [member]
+            users = [member] if member else []
         if not (time and message):
             return await ctx.send("Time and message required.")
         time_str = time
@@ -228,16 +296,12 @@ async def remind_set(ctx, target: str, time: str = None, channel_ref: str = None
         channel_ref = None
     try:
         channel = resolve_channel(ctx, channel_ref, is_admin)
-    except PermissionError:
-        return await ctx.send("Only admins can choose a channel or thread.")
-    except ValueError:
-        return await ctx.send("Invalid channel or thread.")
+    except Exception:
+        return await ctx.send("Invalid channel or permissions.")
     try:
         remind_time = next_from_hhmm(time_str)
     except ValueError:
-        return await ctx.send("Time must be HHMM (24-hour clock).")
-    if repeat and repeat not in ("day", "week", "month"):
-        return await ctx.send("Repeat must be day, week, or month.")
+        return await ctx.send("Time must be HHMM.")
     reminders = load_json(REMINDER_FILE, [])
     for u in users:
         reminders.append({
@@ -255,18 +319,15 @@ async def remind_list(ctx):
     reminders = load_json(REMINDER_FILE, [])
     mine = [r for r in reminders if r["user_id"] == ctx.author.id]
     if not mine:
-        return await ctx.send("No pending reminders.")
+        return await ctx.send("No reminders.")
     now = datetime.now(timezone.utc)
     lines = ["Your reminders:"]
     for i, r in enumerate(mine, 1):
-        fire_time = datetime.fromisoformat(r["time"])
-        if fire_time.tzinfo is None:
-            fire_time = fire_time.replace(tzinfo=timezone.utc)
-        delta = fire_time - now
+        fire = datetime.fromisoformat(r["time"])
+        delta = fire - now
         h = int(delta.total_seconds() // 3600)
         m = int(delta.total_seconds() % 3600 // 60)
-        rep = f" (repeat {r['repeat']})" if r["repeat"] else ""
-        lines.append(f"{i}. {r['message']} — in {h}h {m}m{rep}")
+        lines.append(f"{i}. {r['message']} — in {h}h {m}m")
     await ctx.send("\n".join(lines))
 
 @remind.command(name="forget")
@@ -274,103 +335,12 @@ async def remind_forget(ctx, number: int):
     reminders = load_json(REMINDER_FILE, [])
     mine = [r for r in reminders if r["user_id"] == ctx.author.id]
     if number < 1 or number > len(mine):
-        return await ctx.send("Invalid reminder number.")
+        return await ctx.send("Invalid number.")
     reminders.remove(mine[number - 1])
     save_json(REMINDER_FILE, reminders)
     await ctx.send("Reminder deleted.")
 
-# ================== COUNTDOWN COMMANDS ==================
-@bot.group(name="countdown", invoke_without_command=True)
-async def countdown(ctx):
-    await ctx.send("Usage: !countdown set | list | forget")
-
-@countdown.command(name="set")
-async def countdown_set(ctx, target: str, date: str = None, time: str = None,
-                        channel_ref: str = None, *, label: str = None):
-    is_admin = is_committee_member(ctx.author)
-    if target.startswith("<@"):
-        if not is_admin:
-            return await ctx.send("You can only set countdowns for yourself.")
-        if target.startswith("<@&"):
-            role = ctx.guild.get_role(int(target[3:-1]))
-            users = role.members if role else []
-        else:
-            member = ctx.guild.get_member(int(target.strip("<@!>")))
-            users = [member] if member else []
-    else:
-        users = [ctx.author]
-        label = label or ""
-        channel_ref = None
-        time = date
-        date = target
-    try:
-        h, m = parse_hhmm(time)
-        deadline = datetime.strptime(date, "%Y-%m-%d").replace(
-            hour=h, minute=m, tzinfo=timezone.utc
-        )
-    except Exception:
-        return await ctx.send("Format: YYYY-MM-DD HHMM")
-    try:
-        channel = resolve_channel(ctx, channel_ref, is_admin)
-    except PermissionError:
-        return await ctx.send("Only admins can choose a channel or thread.")
-    except ValueError:
-        return await ctx.send("Invalid channel or thread.")
-    countdowns = load_json(COUNTDOWN_FILE, [])
-    for u in users:
-        countdowns.append({
-            "user_id": u.id,
-            "channel_id": channel.id,
-            "label": label,
-            "deadline": deadline.isoformat(),
-            "fired": []
-        })
-    save_json(COUNTDOWN_FILE, countdowns)
-    await ctx.send("Countdown set.")
-
-# ================== COMMAND LIST ==================
-@bot.command(name="commands")
-async def commands_list(ctx):
-    lines = [
-        "Available commands:",
-        "",
-        "Reminders:",
-        "!remind set <HHMM> <message>",
-        "!remind set <HHMM> day|week|month <message>",
-        "!remind list",
-        "!remind forget <number>",
-        "",
-        "Countdowns:",
-        "!countdown set <YYYY-MM-DD> <HHMM> <label>",
-        "!countdown list",
-        "!countdown forget <number>",
-        "",
-        "Todo:",
-        "!todo view"
-    ]
-    if is_committee_member(ctx.author):
-        lines += [
-            "",
-            "Admin commands:",
-            "",
-            "Todo management:",
-            "!todo add <task>",
-            "!todo remove <number>",
-            "!todo clear",
-            "!todo assign @user <number>",
-            "!todo unassign <number>",
-            "",
-            "Admin reminders:",
-            "!remind set @user <HHMM> #channel [day|week|month] <message>",
-            "!remind set @role <HHMM> #channel [day|week|month] <message>",
-            "",
-            "Admin countdowns:",
-            "!countdown set @user <YYYY-MM-DD> <HHMM> #channel <label>",
-            "!countdown set @role <YYYY-MM-DD> <HHMM> #channel <label>"
-        ]
-    await ctx.send("\n".join(lines))
-
-# ================== REMINDER LOOP ==================
+# ================== BACKGROUND TASKS ==================
 async def reminder_loop():
     await bot.wait_until_ready()
     while not bot.is_closed():
@@ -378,23 +348,20 @@ async def reminder_loop():
         now = datetime.now(timezone.utc)
         remaining = []
         for r in reminders:
-            fire_time = datetime.fromisoformat(r["time"])
-            if fire_time.tzinfo is None:
-                fire_time = fire_time.replace(tzinfo=timezone.utc)
-            if now >= fire_time:
+            fire = datetime.fromisoformat(r["time"])
+            if now >= fire:
                 channel = bot.get_channel(r["channel_id"])
                 user = bot.get_user(r["user_id"])
                 if channel and user:
                     await channel.send(f"{user.mention} Reminder: {r['message']}")
                 if r["repeat"]:
-                    r["time"] = advance_repeat(fire_time, r["repeat"]).isoformat()
+                    r["time"] = advance_repeat(fire, r["repeat"]).isoformat()
                     remaining.append(r)
             else:
                 remaining.append(r)
         save_json(REMINDER_FILE, remaining)
         await asyncio.sleep(30)
 
-# ================== COUNTDOWN LOOP ==================
 async def countdown_loop():
     await bot.wait_until_ready()
     while not bot.is_closed():
@@ -403,12 +370,10 @@ async def countdown_loop():
         changed = False
         for c in countdowns:
             deadline = datetime.fromisoformat(c["deadline"])
-            if deadline.tzinfo is None:
-                deadline = deadline.replace(tzinfo=timezone.utc)
             remaining = (deadline - now).total_seconds()
             fired = set(c.get("fired", []))
-            for key, seconds, label in COUNTDOWN_MILESTONES:
-                if remaining <= seconds and key not in fired:
+            for key, sec, label in COUNTDOWN_MILESTONES:
+                if remaining <= sec and key not in fired:
                     channel = bot.get_channel(c["channel_id"])
                     user = bot.get_user(c["user_id"])
                     if channel and user:
@@ -430,8 +395,7 @@ async def on_message(message):
         links = "\n".join(a.url for a in message.attachments)
         await log_channel.send(
             f"Message from {message.author} in {message.channel.mention}:\n"
-            f"{message.content or '[No text]'}\n"
-            f"Attachments:\n{links}"
+            f"{message.content or '[No text]'}\nAttachments:\n{links}"
         )
     await bot.process_commands(message)
 
@@ -441,9 +405,8 @@ async def on_message_edit(before, after):
         return
     log_channel = await get_log_channel(before.guild)
     await log_channel.send(
-        f"Message edited by {before.author} in {before.channel.mention}:\n"
-        f"**Before:** {before.content or '[No text]'}\n"
-        f"**After:** {after.content or '[No text]'}"
+        f"Message edited by {before.author}:\n"
+        f"Before: {before.content}\nAfter: {after.content}"
     )
 
 @bot.event
@@ -452,8 +415,7 @@ async def on_message_delete(message):
         return
     log_channel = await get_log_channel(message.guild)
     await log_channel.send(
-        f"Message deleted by {message.author} in {message.channel.mention}:\n"
-        f"{message.content or '[No text]'}"
+        f"Message deleted by {message.author}:\n{message.content}"
     )
 
 @bot.event
@@ -461,10 +423,7 @@ async def on_command(ctx):
     if ctx.author.bot:
         return
     log_channel = await get_log_channel(ctx.guild)
-    await log_channel.send(
-        f"Command used by {ctx.author} in {ctx.channel.mention}:\n"
-        f"{ctx.message.content}"
-    )
+    await log_channel.send(f"Command used: {ctx.message.content}")
 
 # ================== READY ==================
 @bot.event
@@ -474,5 +433,3 @@ async def on_ready():
     bot.loop.create_task(countdown_loop())
 
 bot.run(TOKEN)
-
-    
